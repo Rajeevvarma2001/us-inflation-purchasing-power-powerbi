@@ -1,0 +1,134 @@
+// DAX measures from US_Inflation_Purchasing_Power.pbix
+// Home table shown in brackets. Exported from the semantic model.
+
+// ---- Calculated tables ----
+// Dim_Date
+Dim_Date =
+ADDCOLUMNS(
+    CALENDAR(
+        MIN(Fact_National_CPI[Date]),
+        MAX(Fact_National_CPI[Date])
+    ),
+    "Year", YEAR([Date]),
+    "Month Number", MONTH([Date]),
+    "Month Name", FORMAT([Date], "MMMM"),
+    "Year-Month", FORMAT([Date], "YYYY-MM")
+)
+
+// 'Historical Amount' (what-if parameter, $0 to $10,000 in $100 steps)
+'Historical Amount' = GENERATESERIES(0, 10000, 100)
+
+// ---- Measures ----
+// [Fact_National_CPI]
+Average CPI =
+AVERAGE(Fact_National_CPI[CPI_Value])
+
+// [Fact_National_CPI]
+Latest CPI =
+VAR LatestDate =
+    CALCULATE(
+        MAX(Fact_National_CPI[Date]),
+        REMOVEFILTERS(Dim_Date)
+    )
+RETURN
+    CALCULATE(
+        MAX(Fact_National_CPI[CPI_Value]),
+        REMOVEFILTERS(Dim_Date),
+        Fact_National_CPI[Date] = LatestDate
+    )
+
+// [Fact_National_CPI]
+Historical CPI =
+IF(
+    HASONEVALUE(Dim_Date[Year]),
+    [Average CPI],
+    BLANK()
+)
+
+// [Fact_National_CPI]
+Value of $100 Today =
+VAR HistoricalCPI = [Historical CPI]
+VAR CurrentCPI = [Latest CPI]
+RETURN
+    IF(
+        NOT ISBLANK(HistoricalCPI)
+            && HistoricalCPI > 0,
+        DIVIDE(100 * CurrentCPI, HistoricalCPI),
+        BLANK()
+    )
+
+// [Fact_National_CPI]
+Purchasing Power Lost % =
+VAR HistoricalCPI = [Historical CPI]
+VAR CurrentCPI = [Latest CPI]
+RETURN
+    IF(
+        NOT ISBLANK(HistoricalCPI)
+            && HistoricalCPI > 0
+            && CurrentCPI > 0,
+        1 - DIVIDE(HistoricalCPI, CurrentCPI),
+        BLANK()
+    )
+
+// [Fact_National_CPI]
+Cumulative Inflation % =
+VAR HistoricalCPI = [Historical CPI]
+VAR CurrentCPI = [Latest CPI]
+RETURN
+    IF(
+        NOT ISBLANK(HistoricalCPI)
+            && HistoricalCPI > 0,
+        DIVIDE(
+            CurrentCPI - HistoricalCPI,
+            HistoricalCPI
+        ),
+        BLANK()
+    )
+
+// [Fact_National_CPI]
+YoY Inflation % =
+VAR CurrentCPI =
+    [Average CPI]
+VAR PreviousYearCPI =
+    CALCULATE(
+        [Average CPI],
+        SAMEPERIODLASTYEAR(Dim_Date[Date])
+    )
+RETURN
+    IF(
+        NOT ISBLANK(PreviousYearCPI)
+            && PreviousYearCPI > 0,
+        DIVIDE(
+            CurrentCPI - PreviousYearCPI,
+            PreviousYearCPI
+        ),
+        BLANK()
+    )
+
+// [Historical Amount]
+Historical Amount Value =
+SELECTEDVALUE('Historical Amount'[Historical Amount], 100)
+
+// [Fact_National_CPI]
+Adjusted Amount Today =
+VAR SelectedAmount =
+    SELECTEDVALUE('Historical Amount'[Historical Amount], 100)
+VAR HistoricalCPI = [Historical CPI]
+VAR CurrentCPI = [Latest CPI]
+RETURN
+    IF(
+        NOT ISBLANK(HistoricalCPI)
+            && HistoricalCPI > 0,
+        DIVIDE(
+            SelectedAmount * CurrentCPI,
+            HistoricalCPI
+        ),
+        BLANK()
+    )
+
+// [Fact_National_CPI]
+Average CPI (No Year Filter) =
+CALCULATE(
+    [Average CPI],
+    REMOVEFILTERS(Dim_Date[Year])
+)

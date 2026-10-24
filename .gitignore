@@ -1,0 +1,19 @@
+# Power BI local / temp files
+*.pbix.bak
+~$*.pbix
+.pbi/localSettings.json
+.pbi/cache.abf
+*.abf
+
+# Raw BLS downloads (large; re-download from bls.gov)
+data/raw/
+cu.data.*
+cu.series
+cu.item
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
