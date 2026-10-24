@@ -13,9 +13,8 @@ An end-to-end analytics project: raw government CPI data → **PostgreSQL** → 
 
 </div>
 
-<!-- Dashboard screenshot: export the report page from Power BI (File → Export → PDF, or a screen capture),
-     save it as images/dashboard.png, then uncomment the next line. -->
-<!-- ![Dashboard](images/dashboard.png) -->
+![U.S. Inflation & Purchasing Power dashboard in Power BI](images/dashboard.png)
+<p align="center"><sub>Base year 1997 · $500 converted to today's dollars · CPI data through Sep 2026</sub></p>
 
 ---
 
